@@ -1,0 +1,105 @@
+package com.manisha.service;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
+import org.springframework.stereotype.Service;
+
+import com.manisha.entity.EligibilityDtlsEntity;
+import com.manisha.repository.EliDtlsRepository;
+import com.manisha.request.SearchRequest;
+import com.manisha.response.SearchResponse;
+
+@Service
+public class ReportServiceImpl implements ReportService {
+
+	@Autowired
+	private EliDtlsRepository repository;
+
+	@Override
+	public List<String> getPlanName() {
+
+		return repository.getUniquePlanNames();
+	}
+
+	@Override
+	public List<String> getPlanStatus() {
+
+		return repository.getUniquePlanStatus();
+	}
+
+	@Override
+	public List<SearchResponse> searchPlans(SearchRequest request) {
+		List<EligibilityDtlsEntity> eligRecords = null;
+
+		if (isSearchReqEmpty(request)) {
+		
+
+			eligRecords = repository.findAll();
+		}
+
+		else {
+
+			String planName = request.getPlanName();
+			String planStatus = request.getPlanStatus();
+			LocalDate startDate = request.getStartDate();
+			LocalDate endDate = request.getEndDate();
+
+			EligibilityDtlsEntity entity = new EligibilityDtlsEntity();
+
+			if (planName != null && !planName.equals("")) {
+				entity.setPlanName(planName);
+
+			}
+			if (planStatus != null && !planStatus.equals("")) {
+				entity.setPlanStatus(planStatus);
+
+			}
+
+			if (startDate != null & endDate != null) {
+				entity.setStartDate(startDate);
+				entity.setEndDate(endDate);
+
+			}
+			Example<EligibilityDtlsEntity> of = Example.of(entity);
+			eligRecords = repository.findAll(of);
+
+		}
+		List<SearchResponse> response = new ArrayList<>();
+		for (EligibilityDtlsEntity eligRecord : eligRecords) {
+			SearchResponse sr = new SearchResponse();
+			BeanUtils.copyProperties(eligRecord, sr);
+			response.add(sr);
+		}
+		return response;
+	}
+
+	private boolean isSearchReqEmpty(SearchRequest request) {
+		
+		if(request==null) {
+			return true;
+		}
+
+		if (request.getPlanName() != null && !request.getPlanName().equals("")) {
+			return false;
+		}
+
+		if (request.getPlanStatus() != null && !request.getPlanStatus().equals("")) {
+			return false;
+		}
+
+		if (request.getStartDate() != null && !request.getStartDate().equals("")) {
+			return false;
+		}
+		if (request.getEndDate() != null && !request.getEndDate().equals("")) {
+			return false;
+		}
+
+		return true;
+	}
+
+}
